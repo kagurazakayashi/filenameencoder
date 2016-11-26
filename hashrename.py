@@ -6,6 +6,7 @@ import os
 import os.path
 import base64
 import md5
+import platform
 class Hashrename:
     codemode = True #T:编码，F:解码
     codemethod = "base64" #"base64"/"md5"
@@ -13,9 +14,11 @@ class Hashrename:
     allyes = False #T:无需确认，F:需要确认
     argumentdict = {}
     alert = ""
+    hiddenfile = False #T:不隐藏文件，F:包含隐藏文件。同时适用于Unix和NT
+    systemencoding = sys.getfilesystemencoding()
     #显示关于信息
     def about(self):
-        print "\nYashi Hashrename v1.0" #,sys.argv[0]
+        print "\nYashi Hashrename v1.1" #,sys.argv[0]
         #for i in range(1, len(sys.argv)):
             #print "parameter", i, sys.argv[i]
     #显示英文帮助信息
@@ -32,8 +35,10 @@ class Hashrename:
         "  Rename a file.",
         "--folder <foldername> | -f <foldername> :",
         "  Rename all files in a folder.",
+        "--hiddenfiles | -s :",
+        "  Include hidden files. Default value is void (not included).",
         "--yes | -y :",
-        "  no confirmation will follow. Default value is void.",
+        "  No confirmation will follow. Default value is void (no).",
         " "]
         for i in range(0, len(hlp)):
             print " ",hlp[i]
@@ -51,11 +56,16 @@ class Hashrename:
         "  重命名单一文件。",
         "--folder <文件夹名> 或者 -f <文件夹名> :",
         "  重命名一个文件夹中的所有文件。",
+        "--hiddenfiles 或者 -s :",
+        "  包含隐藏文件。默认值是不包含隐藏文件。",
         "--yes 或者 -y :",
-        "  不进行确认询问，直接进行重命名操作。默认值是需要询问。"
+        "  不进行确认询问，直接进行重命名操作。默认值是需要询问。",
         " "]
         for i in range(0, len(hlp)):
-            print " ",hlp[i]
+            print " ",self.autoencode(hlp[i])
+    #文件编码
+    def autoencode(self,str):
+        return str.decode('utf-8').encode(self.systemencoding)
     #程序起点
     def init(self):
         self.about()
@@ -81,6 +91,7 @@ class Hashrename:
                     nk = nowp
                 else: #应输入nv
                     if self.argumentiskey(nowp) == True: #这是下一个nk
+                        self.argumentdict[nk] = nv
                         nk = nowp
                         nv = ""
                     else:
@@ -104,7 +115,7 @@ class Hashrename:
         for ni in range(0, len(keys)):
             nk = keys[ni]
             nv = self.argumentdict[nk]
-            print "nk =",nk,"nv =",nv
+            #print "nk =",nk,"nv =",nv
             canstart = True
             if nk == "--help" or nk == "-h":
                 canstart = False
@@ -112,25 +123,23 @@ class Hashrename:
                     self.help()
                 elif nv == "cn":
                     self.helpcn()
-                else:
-                    print "e1"
-                    return False
+                self.alert = " "
+                return True
+            elif nk == "--hiddenfiles" or nk == "-s":
+                self.hiddenfile = True
             elif nk == "--encoding" or nk == "-e":
                 if nv == "base64" or nv == "md5":
                     self.codemethod = nv
                 else:
-                    print "e2"
                     return False
             elif nk == "--decoding" or nk == "-d":
                 self.codemode = False
                 if nv == "base64":
                     self.codemethod = nv
                 else:
-                    print "e3"
                     return False
             elif nk == "--file" or nk == "-i":
                 if len(self.path) > 0:
-                    print "e4"
                     return False
                 if os.path.exists(nv) == False:
                     self.alert = "[ERROR] File does not exist."
@@ -140,7 +149,6 @@ class Hashrename:
                 self.path = [self.splitpath(fullpath)]
             elif nk == "--folder" or nk == "-f":
                 if len(self.path) > 0:
-                    print "e5"
                     return False
                 if os.path.exists(nv) == False:
                     self.alert = "[ERROR] Folder does not exist."
@@ -155,10 +163,8 @@ class Hashrename:
             elif nk == "--yes" or nk == "-y":
                 self.allyes = True
             else:
-                print "e6"
                 return False
         if canstart == True and len(self.path) == 0:
-            print "e7"
             return False
     #路径拆分
     def splitpath(self,fullpath):
@@ -172,7 +178,11 @@ class Hashrename:
     #转换开始
     def filenamepreview(self):
         renamep = []
-        for i in range(0, len(self.path)):
+        skipfile = 1
+        total = len(self.path)
+        skip = 0
+        ready = 0
+        for i in range(0, total):
             path = self.path[i]
             dir = path[0]
             filename = path[1]
@@ -186,20 +196,31 @@ class Hashrename:
                 return False
             oldp = os.path.join(dir,filename+extname)
             newp = os.path.join(dir,cfilename+extname)
-            print str(i+1)+".",oldp
-            print "->",newp
-            renamep.append([oldp,newp])
+            if self.hiddenfile == False and self.isHidenFile(oldp,filename) == True:
+                print "*.",oldp
+                skipfile = skipfile - 1
+                skip = skip + 1
+                print "-> Skip hidden file."
+            else:
+                print str(i+skipfile)+".",oldp
+                print "->",newp
+                ready = ready + 1
+                renamep.append([oldp,newp])
         content = "y"
+        print str(ready),"Ready,",str(skip),"Skip,",str(total),"Total"
         if self.allyes == False:
             content = raw_input("Start rename (y/N)? :")
         if content != "y" and content != "Y":
             print "NO."
             return False
-        self.startrename(renamep)
+        self.startrename(renamep,skip)
     #开始重命名
-    def startrename(self,renamep):
+    def startrename(self,renamep,skip):
         print "Start rename ..."
-        for i in range(0, len(renamep)):
+        oki = 0
+        faili = 0
+        total = len(renamep)
+        for i in range(0, total):
             nowrenamep = renamep[i]
             oldp = nowrenamep[0]
             newp = nowrenamep[1]
@@ -208,9 +229,12 @@ class Hashrename:
             result = "OK."
             try:
                 os.rename(oldp,newp)
+                oki = oki + 1
             except Exception,e:
+                faili = faili + 1
                 result = e
             print "->",result
+        print str(oki),"OK,",str(faili),"Fail,",str(skip),"Skip,",str(total+skip),"Total."
     #文件名编码
     def filenamecode(self,filename):
         if self.codemethod == "base64":
@@ -240,6 +264,16 @@ class Hashrename:
                 return newstr
             else:
                 return ""
+    #判断是否为隐藏文件
+    def isHidenFile(self,filePath,filename):
+        if 'Windows' in platform.system(): #Windows
+            import win32file,win32con
+            fileAttr = win32file.GetFileAttributes(filePath)
+            if fileAttr & win32con.FILE_ATTRIBUTE_HIDDEN :
+                return True
+            return False
+        else:
+            return filename.startswith('.') #linux
 
 hobj = Hashrename()
 hobj.init()
