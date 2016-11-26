@@ -267,11 +267,17 @@ class Hashrename:
     #判断是否为隐藏文件
     def isHidenFile(self,filePath,filename):
         if 'Windows' in platform.system(): #Windows
-            import win32file,win32con
-            fileAttr = win32file.GetFileAttributes(filePath)
-            if fileAttr & win32con.FILE_ATTRIBUTE_HIDDEN :
-                return True
-            return False
+        	p = os.popen('attrib ' + filePath)
+        	pr = p.readlines()[0][4]
+        	p.close()
+        	if pr == "H":
+        		return True
+        	return False
+            #import win32file,win32con
+            #fileAttr = win32file.GetFileAttributes(filePath)
+            #if fileAttr & win32con.FILE_ATTRIBUTE_HIDDEN :
+                #return True
+            #return False
         else:
             return filename.startswith('.') #linux
 
