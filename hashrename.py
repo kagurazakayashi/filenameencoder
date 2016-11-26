@@ -4,6 +4,8 @@
 import sys
 import os
 import os.path
+import base64
+import md5
 class Hashrename:
     codemode = True #T:编码，F:解码
     codemethod = "base64" #"base64"/"md5"
@@ -59,6 +61,10 @@ class Hashrename:
         self.about()
         if self.argumentparsing() == False:
             self.argumenterr()
+        elif self.alert != "":
+            print self.alert
+        else:
+            self.filenamepreview()
     #处理参数
     def argumentparsing(self):
         argvlen = len(sys.argv)
@@ -96,6 +102,7 @@ class Hashrename:
         for ni in range(0, len(keys)):
             nk = keys[ni]
             nv = self.argumentdict[nk]
+            #print "nk =",nk,"nv =",nv
             canstart = True
             if nk == "--help" or nk == "-h":
                 canstart = False
@@ -104,52 +111,109 @@ class Hashrename:
                 elif nv == "cn":
                     self.helpcn()
                 else:
+                    print "e1"
                     return False
             elif nk == "--encoding" or nk == "-e":
-                if self.codemethod != "":
-                    return False
                 if nv == "base64" or nv == "md5":
                     self.codemethod = nv
                 else:
+                    print "e2"
                     return False
             elif nk == "--decoding" or nk == "-d":
-                if self.codemethod != "":
-                    return False
+                self.codemode = False
                 if nv == "base64":
                     self.codemethod = nv
                 else:
+                    print "e3"
                     return False
             elif nk == "--file" or nk == "-i":
                 if len(self.path) > 0:
+                    print "e4"
                     return False
                 if os.path.exists(nv) == False:
-                    self.alert = "File does not exist."
+                    self.alert = "[ERROR] File does not exist."
                     return True
-                self.path = [nv]
+                #相对路径转绝对路径
+                fullpath = os.path.abspath(nv)
+                self.path = [self.splitpath(fullpath)]
             elif nk == "--folder" or nk == "-f":
                 if len(self.path) > 0:
+                    print "e5"
                     return False
                 if os.path.exists(nv) == False:
-                    self.alert = "Folder does not exist."
+                    self.alert = "[ERROR] Folder does not exist."
                     return True
-                for parent,dirnames,filenames in os.walk(rootdir): #遍历文件夹
+                for parent,dirnames,filenames in os.walk(nv): #遍历文件夹
                     for filename in filenames:
-                        fullpath = os.path.join(parent,filename)
-                        self.path.append(fullpath)
+                        fullpath = os.path.abspath(os.path.join(parent,filename))
+                        self.path.append(self.splitpath(fullpath))
                 if len(self.path) == 0:
-                    self.alert = "Folder is empty."
+                    self.alert = "[ERROR] Folder is empty."
                     return True
             elif nk == "--yes" or nk == "-y":
                 self.allyes = True
             else:
+                print "e6"
                 return False
-            if canstart == True and len(self.path) == 0:
-                return False
-        return True
+        if canstart == True and len(self.path) == 0:
+            print "e7"
+            return False
+    #路径拆分
+    def splitpath(self,fullpath):
+        dir,file=os.path.split(fullpath)
+        filename,extname=os.path.splitext(file)
+        return [dir,filename,extname]
     #参数错误
     def argumenterr(self):
         print "  No parameter or parameter error."
         self.help()
+    #转换开始
+    def filenamepreview(self):
+        for i in range(0, len(self.path)):
+            path = self.path[i]
+            dir = path[0]
+            filename = path[1]
+            extname = path[2]
+            cfilename = self.filenamecode(filename)
+            if cfilename == "":
+                print "[ERROR] File name code failed."
+                return False
+            elif cfilename == "MD":
+                print "[ERROR] Irreversible algorithm."
+                return False
+            oldp = os.path.join(dir,filename+extname)
+            newp = os.path.join(dir,cfilename+extname)
+            print str(i+1)+". "+oldp
+            print "-> "+newp
+    #文件名编码
+    def filenamecode(self,filename):
+        if self.codemethod == "base64":
+            if self.codemode == True:
+                newstr = ""
+                try:
+                    newstr = base64.b64encode(filename)
+                except Exception,e:
+                    print "[ERROR]",e
+                return newstr
+            else:
+                newstr = ""
+                try:
+                    newstr = base64.b64decode(filename)
+                except Exception,e:
+                    print "[ERROR]",e
+                return newstr
+        elif self.codemethod == "md5":
+            if self.codemode == True:
+                newstr = ""
+                try:
+                    md5o = md5.new()
+                    md5o.update(filename)
+                    newstr = md5o.hexdigest()
+                except Exception,e:
+                    print "[ERROR]",e
+                return newstr
+            else:
+                return ""
 
 hobj = Hashrename()
 hobj.init()
