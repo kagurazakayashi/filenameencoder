@@ -89,6 +89,8 @@ class Hashrename:
                     self.argumentdict[nk] = nv
                     nk = ""
                     nv = ""
+        if nk != "":
+            self.argumentdict[nk] = nv
         return self.argumentkv()
     #判断是否为key
     def argumentiskey(self,key):
@@ -102,7 +104,7 @@ class Hashrename:
         for ni in range(0, len(keys)):
             nk = keys[ni]
             nv = self.argumentdict[nk]
-            #print "nk =",nk,"nv =",nv
+            print "nk =",nk,"nv =",nv
             canstart = True
             if nk == "--help" or nk == "-h":
                 canstart = False
@@ -169,6 +171,7 @@ class Hashrename:
         self.help()
     #转换开始
     def filenamepreview(self):
+        renamep = []
         for i in range(0, len(self.path)):
             path = self.path[i]
             dir = path[0]
@@ -183,8 +186,31 @@ class Hashrename:
                 return False
             oldp = os.path.join(dir,filename+extname)
             newp = os.path.join(dir,cfilename+extname)
-            print str(i+1)+". "+oldp
-            print "-> "+newp
+            print str(i+1)+".",oldp
+            print "->",newp
+            renamep.append([oldp,newp])
+        content = "y"
+        if self.allyes == False:
+            content = raw_input("Start rename (y/N)? :")
+        if content != "y" and content != "Y":
+            print "NO."
+            return False
+        self.startrename(renamep)
+    #开始重命名
+    def startrename(self,renamep):
+        print "Start rename ..."
+        for i in range(0, len(renamep)):
+            nowrenamep = renamep[i]
+            oldp = nowrenamep[0]
+            newp = nowrenamep[1]
+            print str(i+1)+".",oldp
+            print "->",newp
+            result = "OK."
+            try:
+                os.rename(oldp,newp)
+            except Exception,e:
+                result = e
+            print "->",result
     #文件名编码
     def filenamecode(self,filename):
         if self.codemethod == "base64":
