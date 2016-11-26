@@ -8,13 +8,13 @@ class Hashrename:
     filedir = True #T:文件，F:文件夹
     path = "" #文件或文件夹路径
     allyes = True #T:无需确认，F:需要确认
-    pathing = False #路径是否完成。T:引号已开始，F:引号已结束
-    keys = ["--help","-h","--encoding","-e","--decoding","-d","--file","-i","--folder","-f","--yes","-y"] #可接受参数类型
+    pathing = False #路径是否完成。
+    keys = ["--encoding","-e","--decoding","-d","--file","-i","--folder","-f","--yes","-y","--help","-h"] #可接受参数类型
     #显示关于信息
     def about(self):
         print "\nYashi Hashrename v1.0" #,sys.argv[0]
-        for i in range(1, len(sys.argv)):
-            print "parameter", i, sys.argv[i]
+        #for i in range(1, len(sys.argv)):
+            #print "parameter", i, sys.argv[i]
     #显示英文帮助信息
     def help(self):
         hlp = [
@@ -63,23 +63,45 @@ class Hashrename:
         argvlen = len(sys.argv)
         if (argvlen == 1):
             return False
-        nk = ""
-        nv = ""
+        nk = "" #当前得到的参数Key
+        nv = "" #当前得到的参数value
         if (argvlen > 1):
             for i in range(1, len(sys.argv)):
                 nowp = sys.argv[i] #当前参数
                 if (nk == ""): #应输入nk
-                    for i in range(0, len(self.keys)):
-                        nowip = self.keys[i] #当前待比对内置参数
-                        if (nowp == nowip):
-                            nk = nowp
-                            break
+                    if (self.argumentiskey(nowp) == False):
+                        return False
+                    nk = self.argumenttruekey(nowp) #判断nk是否有效
                     if (nk == ""): #没有nk
                         return False
                 else: #应输入nv
-                    nv = nowp
-
+                    if (self.argumentiskey(nowp) == True): #这是下一个nk
+                        nk = self.argumenttruekey(nowp) #判断nk是否有效
+                        if (nk == ""): #没有nk
+                            return False
+                        nv = ""
+                    else:
+                        nv = nowp
+                    self.argumentkv(nk,nv)
+                    nk = ""
+                    nv = ""
         return True
+    #判断参数key是否有效
+    def argumenttruekey(self,nowp):
+        for i in range(0, len(self.keys)):
+            nowip = self.keys[i] #当前待比对内置参数
+            if (nowp == nowip):
+                return nowp
+        return ""
+    #判断是否为key
+    def argumentiskey(self,key):
+        onechar = key[0]
+        if (onechar == "-"):
+            return True
+        return False
+    #处理nknv
+    def argumentkv(self,nk,nv):
+        print "nk =",nk,"nv =",nv
     #参数错误
     def argumenterr(self):
         print "  No parameter or parameter error."
