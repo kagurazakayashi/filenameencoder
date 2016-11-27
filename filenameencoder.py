@@ -7,7 +7,7 @@ import os.path
 import base64
 import md5
 import platform
-class Hashrename:
+class Filenameencoder:
     codemode = True #T:编码，F:解码
     codemethod = "base64" #"base64"/"md5"
     path = [] #文件或文件夹路径
@@ -18,26 +18,26 @@ class Hashrename:
     systemencoding = sys.getfilesystemencoding()
     #显示关于信息
     def about(self):
-        print "\nYashi Hashrename v1.1" #,sys.argv[0]
+        print "\nYashi Filenameencoder v1.1 ("+self.systemencoding+")" #,sys.argv[0]
         #for i in range(1, len(sys.argv)):
             #print "parameter", i, sys.argv[i]
     #显示英文帮助信息
     def help(self):
         hlp = [
         "usage: "+sys.argv[0]+" [--encoding [base64|md5] | --decoding [base64]] [--file <filename> | --folder <foldername>] [--readonly]",
-        "--help [en|cn] | -h [en|cn] :",
+        "--help [en|cn] | -h [en|cn] | /? [en|cn]:",
         "  Display the help. Default value is en.",
-        "--encoding [base64|md5] | -e [base64|md5] :",
+        "--encode [base64|md5] | -e [base64|md5]  | /e [base64|md5] :",
         "  Set encoding mode (default). Default value is base64.",
-        "--decoding [base64] | -d [base64] :",
+        "--decode [base64] | -d [base64] | /d [base64] :",
         "  Set decoding mode. Default value is base64.",
-        "--file <filename> | -i <filename> :",
+        "--file <filename> | -i <filename> | /i <filename> :",
         "  Rename a file.",
-        "--folder <foldername> | -f <foldername> :",
+        "--folder <foldername> | -f <foldername> | /f <foldername> :",
         "  Rename all files in a folder.",
-        "--hiddenfiles | -s :",
+        "--hiddenfiles | -s | /s :",
         "  Include hidden files. Default value is void (not included).",
-        "--yes | -y :",
+        "--yes | -y | /y :",
         "  No confirmation will follow. Default value is void (no).",
         " "]
         for i in range(0, len(hlp)):
@@ -46,19 +46,19 @@ class Hashrename:
     def helpcn(self):
         hlp = [
         "使用方法: "+sys.argv[0]+" [--encoding [base64|md5] | --decoding [base64]] [--file <文件名> | --folder <文件夹名>] [--readonly]",
-        "--help [en|cn] 或者 -h [en|cn] :",
+        "--help [en|cn] 或者 -h [en|cn] 或者 /? [en|cn]:",
         "  显示这些帮助信息，添加 cn 可以显示此中文帮助。默认值为英语。",
-        "--encoding [base64|md5] 或者 -e [base64|md5] :",
+        "--encoding [base64|md5] 或者 -e [base64|md5] 或者 /e [base64|md5] :",
         "  使用指定方式编码（默认）。默认值是 base64 。",
-        "--decoding [base64] 或者 -d [base64] :",
+        "--decoding [base64] 或者 -d [base64] 或者 /d [base64] :",
         "  使用指定方式解码。默认值是 base64 。",
-        "--file <文件名> 或者 -i <文件名> :",
+        "--file <文件名> 或者 -i <文件名> /i <文件名> :",
         "  重命名单一文件。",
-        "--folder <文件夹名> 或者 -f <文件夹名> :",
+        "--folder <文件夹名> 或者 -f <文件夹名> 或者 /f <文件夹名> :",
         "  重命名一个文件夹中的所有文件。",
-        "--hiddenfiles 或者 -s :",
+        "--hiddenfiles 或者 -s 或者 /s :",
         "  包含隐藏文件。默认值是不包含隐藏文件。",
-        "--yes 或者 -y :",
+        "--yes 或者 -y 或者 /y :",
         "  不进行确认询问，直接进行重命名操作。默认值是需要询问。",
         " "]
         for i in range(0, len(hlp)):
@@ -106,7 +106,7 @@ class Hashrename:
     #判断是否为key
     def argumentiskey(self,key):
         onechar = key[0]
-        if onechar == "-":
+        if onechar == "-" or onechar == "/":
             return True
         return False
     #处理nknv
@@ -117,7 +117,7 @@ class Hashrename:
             nv = self.argumentdict[nk]
             #print "nk =",nk,"nv =",nv
             canstart = True
-            if nk == "--help" or nk == "-h":
+            if nk == "--help" or nk == "-h" or nk == "/?":
                 canstart = False
                 if nv == "" or nv == "en":
                     self.help()
@@ -125,20 +125,20 @@ class Hashrename:
                     self.helpcn()
                 self.alert = " "
                 return True
-            elif nk == "--hiddenfiles" or nk == "-s":
+            elif nk == "--hiddenfiles" or nk == "-s" or nk == "/s":
                 self.hiddenfile = True
             elif nk == "--encoding" or nk == "-e":
                 if nv == "base64" or nv == "md5":
                     self.codemethod = nv
                 else:
                     return False
-            elif nk == "--decoding" or nk == "-d":
+            elif nk == "--decoding" or nk == "-d" or nk == "/d":
                 self.codemode = False
                 if nv == "base64":
                     self.codemethod = nv
                 else:
                     return False
-            elif nk == "--file" or nk == "-i":
+            elif nk == "--file" or nk == "-i" or nk == "/i":
                 if len(self.path) > 0:
                     return False
                 if os.path.exists(nv) == False:
@@ -147,7 +147,7 @@ class Hashrename:
                 #相对路径转绝对路径
                 fullpath = os.path.abspath(nv)
                 self.path = [self.splitpath(fullpath)]
-            elif nk == "--folder" or nk == "-f":
+            elif nk == "--folder" or nk == "-f" or nk == "/f":
                 if len(self.path) > 0:
                     return False
                 if os.path.exists(nv) == False:
@@ -160,7 +160,7 @@ class Hashrename:
                 if len(self.path) == 0:
                     self.alert = "[ERROR] Folder is empty."
                     return True
-            elif nk == "--yes" or nk == "-y":
+            elif nk == "--yes" or nk == "-y" or nk == "/y":
                 self.allyes = True
             else:
                 return False
@@ -248,7 +248,10 @@ class Hashrename:
             else:
                 newstr = ""
                 try:
-                    newstr = base64.b64decode(filename)
+                    missing_padding = 4 - len(filename) % 4 #需要补齐等号
+                    if missing_padding:
+                        filename += b'='* missing_padding
+                    newstr = base64.decodestring(filename)
                 except Exception,e:
                     print "[ERROR]",e
                 return newstr
@@ -281,5 +284,5 @@ class Hashrename:
         else:
             return filename.startswith('.') #linux
 
-hobj = Hashrename()
+hobj = Filenameencoder()
 hobj.init()
