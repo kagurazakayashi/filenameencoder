@@ -6,11 +6,12 @@ import sys
 import os
 import os.path
 import base64
-import md5
 import platform
+import hashlib
 class Filenameencoder:
+    argv =  [] #可以在init前配置此属性以接入使用
     codemode = True #T:编码，F:解码
-    codemethod = "disable" #"disable"/"base64"/"md5"
+    codemethod = "" #"disable"/"base64"/"md5"
     path = [] #文件或文件夹路径
     allyes = False #T:无需确认，F:需要确认
     argumentdict = {}
@@ -18,20 +19,30 @@ class Filenameencoder:
     hiddenfile = False #T:不隐藏文件，F:包含隐藏文件。同时适用于Unix和NT
     readencoding = None
     writeencoding = None
-    systemencoding = sys.getfilesystemencoding()
+    systemencoding = ""
     #显示关于信息
     def about(self):
-        print "\nYashi Filenameencoder v1.2 for py2" #,sys.argv[0]
-        #for i in range(1, len(sys.argv)):
-            #print "parameter", i, sys.argv[i]
+        print "\nYashi Filenameencoder v1.2 for py2" #,self.argv[0]
+    def __init__(self):
+        self.argv = sys.argv
+        self.codemode = True
+        self.codemethod = "disable"
+        self.path = []
+        self.allyes = False
+        self.argumentdict = {}
+        self.alert = ""
+        self.hiddenfile = False
+        self.readencoding = None
+        self.writeencoding = None
+        self.systemencoding = sys.getfilesystemencoding()
     def minihelp(self):
-        print "\n  usage: "+sys.argv[0]+" [[--encoding [disable|base64|md5] | --decoding [disable|base64]] [--file <filename> | --folder <foldername>] [--readonly] [--hiddenfiles] [--yes] [--readencode [auto|utf-8|mbcs|gbk|...]] [--writeencode [auto|utf-8|mbcs|gbk|...]]\n"
-        print "  Enter \""+sys.argv[0]+" --help\" to get help."
+        print "\n  usage: "+self.argv[0]+" [[--encoding [disable|base64|md5] | --decoding [disable|base64]] [--file <filename> | --folder <foldername>] [--readonly] [--hiddenfiles] [--yes] [--readencode [auto|utf-8|mbcs|gbk|...]] [--writeencode [auto|utf-8|mbcs|gbk|...]]\n"
+        print "  Enter \""+self.argv[0]+" --help\" to get help."
         print "  --help [en|cn] | -h [en|cn] | /? [en|cn]:\n"
     #显示英文帮助信息
     def help(self):
         hlp = [
-        "\nusage: "+sys.argv[0]+" [[--encoding [disable|base64|md5] | --decoding [disable|base64]] [--file <filename> | --folder <foldername>] [--readonly] [--hiddenfiles] [--yes] [--readencode [auto|utf-8|mbcs|gbk|...]] [--writeencode [auto|utf-8|mbcs|gbk|...]]\n",
+        "\nusage: "+self.argv[0]+" [[--encoding [disable|base64|md5] | --decoding [disable|base64]] [--file <filename> | --folder <foldername>] [--readonly] [--hiddenfiles] [--yes] [--readencode [auto|utf-8|mbcs|gbk|...]] [--writeencode [auto|utf-8|mbcs|gbk|...]]\n",
         "--help [en|cn] | -h [...] | /? [...]:",
         "  Display the help. Default value is en.",
         "--encode [disable|base64|md5] | -e [...] | /e [...] :",
@@ -55,7 +66,7 @@ class Filenameencoder:
     #显示中文帮助信息
     def helpcn(self):
         hlp = [
-        "\n使用方法: "+sys.argv[0]+" [[--encoding [disable或base64或md5]或者--decoding [disable或base64]] [--file <文件名>或者--folder <文件夹名>] [--readonly] [--hiddenfiles] [--yes] [--readencode [auto或utf-8或mbcs或gbk或...]] [--writeencode [auto或utf-8或mbcs或gbk或...]]\n",
+        "\n使用方法: "+self.argv[0]+" [[--encoding [disable或base64或md5]或者--decoding [disable或base64]] [--file <文件名>或者--folder <文件夹名>] [--readonly] [--hiddenfiles] [--yes] [--readencode [auto或utf-8或mbcs或gbk或...]] [--writeencode [auto或utf-8或mbcs或gbk或...]]\n",
         "--help [en或cn] 或者 -h [...] 或者 /? [...] :",
         "  显示这些帮助信息，添加 cn 可以显示此中文帮助。默认值为英语。",
         "--encode [disable或base64或md5] 或者 -e [...] 或者 /e [...] :",
@@ -86,7 +97,7 @@ class Filenameencoder:
         t7 = "$"
         if 'Windows' in platform.system():
             t7 = ">"
-        t7 = "command"+t7+" python "+sys.argv[0]+" "
+        t7 = "command"+t7+" python "+self.argv[0]+" "
         dmo = [
             t7+"-e base64 -f test/",
             "*. "+t1+".DS_Store",
@@ -159,14 +170,15 @@ class Filenameencoder:
             self.filenamepreview()
     #处理参数
     def argumentparsing(self):
-        argvlen = len(sys.argv)
+        argvlen = len(self.argv)
         if (argvlen == 1):
             return False
         nk = "" #当前得到的参数Key
         nv = "" #当前得到的参数value
         if argvlen > 1:
-            for i in range(1, len(sys.argv)):
-                nowp = sys.argv[i] #当前参数
+            #print "self.argv =",self.argv
+            for i in range(1, len(self.argv)):
+                nowp = self.argv[i] #当前参数
                 if nk == "": #应输入nk
                     if self.argumentiskey(nowp) == False:
                         return False
@@ -250,6 +262,8 @@ class Filenameencoder:
                     self.writeencoding = nv
             elif nk == "--yes" or nk == "-y" or nk == "/y":
                 self.allyes = True
+            elif nk == "-test":
+                print "Test Mode"
             else:
                 return False
         if canstart == True and len(self.path) == 0:
@@ -355,7 +369,7 @@ class Filenameencoder:
             if self.codemode == True:
                 newstr = ""
                 try:
-                    md5o = md5.new()
+                    md5o = hashlib.md5()
                     md5o.update(filename)
                     newstr = md5o.hexdigest()
                 except Exception,e:
@@ -380,5 +394,78 @@ class Filenameencoder:
         else:
             return filename.startswith('.') #linux
 
-hobj = Filenameencoder()
-hobj.init()
+#自检
+class FilenameencoderTester:
+    tmpfile = "FilenameencoderTestFile.tmp"
+    b64file = "RmlsZW5hbWVlbmNvZGVyVGVzdEZpbGU=.tmp"
+    md5file = "305862a11a46f7bcc2173cbf67f9f8f5.tmp"
+    test = "[TEST]"
+    def init(self):
+        print self.test,"* * * TEST MODE * * *"
+        print self.test,"System encode:",sys.getfilesystemencoding()
+        targv = sys.argv
+        for i in range(0, len(targv)):
+            print self.test,"input-parameter", i, targv[i]
+        self.createfile()
+        print self.test,"Test base64 encode..."
+        nargv = [targv[0],"-e","base64","-i",self.tmpfile,"-y"]
+        self.starttest(nargv)
+        self.checkfile(self.b64file)
+        print self.test,"Test base64 decode..."
+        nargv = [targv[0],"-d","base64","-i",self.b64file,"-y"]
+        self.starttest(nargv)
+        self.checkfile(self.tmpfile)
+        nargv = [targv[0],"-e","md5","-i",self.tmpfile,"-y"]
+        self.starttest(nargv)
+        self.checkfile(self.md5file)
+        self.deletefile(self.md5file)
+    def starttest(self,nargv):
+        for i in range(0, len(nargv)):
+            print self.test,"new-parameter", i, nargv[i]
+        print self.test,"Init..."
+        pobj = Filenameencoder()
+        pobj.argv = nargv
+        pobj.init()
+        pobj = None
+        print self.test,"Release."
+    def createfile(self):
+        print self.test,"createfile",self.tmpfile,"..."
+        try:
+            f = open(self.tmpfile,'w')
+            f.write("0")
+            f.close()
+            print self.test,"OK."
+        except Exception,e:
+            print self.test,e
+            exit()
+    def deletefile(self,filename):
+        print self.test,"deletefile",filename,"..."
+        try:
+            os.remove(filename)
+            print self.test,"OK."
+        except Exception,e:
+            print self.test,e
+            exit()
+    def checkfile(self,filename):
+        print self.test,"checkfile",filename,"..."
+        t = ""
+        try:
+            f = open(filename,'r')
+            t = f.readline()
+            f.close()
+        except Exception,e:
+            print self.test,e
+            exit()
+        if t != "0":
+            print self.test,"Check failed."
+            exit()
+        else:
+            print self.test,"OK."
+#程序执行
+if len(sys.argv) >= 2 and sys.argv[1] == "-test":
+    tobj = FilenameencoderTester()
+    tobj.init()
+else:
+    pobj = Filenameencoder()
+    pobj.init()
+exit()
