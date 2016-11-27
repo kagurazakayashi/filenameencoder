@@ -9,28 +9,30 @@ import md5
 import platform
 class Filenameencoder:
     codemode = True #T:编码，F:解码
-    codemethod = "base64" #"base64"/"md5"
+    codemethod = "disable" #"disable"/"base64"/"md5"
     path = [] #文件或文件夹路径
     allyes = False #T:无需确认，F:需要确认
     argumentdict = {}
     alert = ""
     hiddenfile = False #T:不隐藏文件，F:包含隐藏文件。同时适用于Unix和NT
+    readencoding = None
+    writeencoding = None
     systemencoding = sys.getfilesystemencoding()
     #显示关于信息
     def about(self):
-        print "\nYashi Filenameencoder v1.1 ("+self.systemencoding+")" #,sys.argv[0]
+        print "\nYashi Filenameencoder v1.2 for py2" #,sys.argv[0]
         #for i in range(1, len(sys.argv)):
             #print "parameter", i, sys.argv[i]
     #显示英文帮助信息
     def help(self):
         hlp = [
-        "usage: "+sys.argv[0]+" [--encoding [base64|md5] | --decoding [base64]] [--file <filename> | --folder <foldername>] [--readonly]",
+        "usage: "+sys.argv[0]+" [--readencode [auto|utf-8|mbcs|gbk|...]] [--writeencode [auto|utf-8|mbcs|gbk|...]] [[--encoding [disable|base64|md5] | --decoding [disable|base64]] [--file <filename> | --folder <foldername>] [--readonly] [--hiddenfiles] [--yes]",
         "--help [en|cn] | -h [en|cn] | /? [en|cn]:",
         "  Display the help. Default value is en.",
-        "--encode [base64|md5] | -e [base64|md5]  | /e [base64|md5] :",
-        "  Set encoding mode (default). Default value is base64.",
-        "--decode [base64] | -d [base64] | /d [base64] :",
-        "  Set decoding mode. Default value is base64.",
+        "--encode [disable|base64|md5] | -e [...]  | /e [...] :",
+        "  Set encoding mode (default). Default value is disable.",
+        "--decode [disable|base64] | -d [...] | /d [...] :",
+        "  Set decoding mode. Default value is disable.",
         "--file <filename> | -i <filename> | /i <filename> :",
         "  Rename a file.",
         "--folder <foldername> | -f <foldername> | /f <foldername> :",
@@ -39,19 +41,25 @@ class Filenameencoder:
         "  Include hidden files. Default value is void (not included).",
         "--yes | -y | /y :",
         "  No confirmation will follow. Default value is void (no).",
+        "--readencode [auto|utf-8|mbcs|gbk|...] | -r [...] | /r [...] :",
+        "  (Advanced) Read file name using encoding. Default value is auto.",
+        "--writeencode [auto|utf-8|mbcs|gbk|...] | -w | /w :",
+        "  (Advanced) Write file name using encoding. Default value is auto.",
         " "]
         for i in range(0, len(hlp)):
-            print " ",hlp[i]
+            codestr = self.strencode("  "+hlp[i],"utf-8",self.systemencoding)
+            if codestr != None:
+                print codestr
     #显示中文帮助信息
     def helpcn(self):
         hlp = [
-        "使用方法: "+sys.argv[0]+" [--encoding [base64|md5] | --decoding [base64]] [--file <文件名> | --folder <文件夹名>] [--readonly]",
+        "使用方法: "+sys.argv[0]+" [--readencode [auto|utf-8|mbcs|gbk|...]] [--writeencode [auto|utf-8|mbcs|gbk|...]] [[--encoding [disable|base64|md5] | --decoding [disable|base64]] [--file <文件名> | --folder <文件夹名>] [--readonly] [--hiddenfiles] [--yes]",
         "--help [en|cn] 或者 -h [en|cn] 或者 /? [en|cn]:",
         "  显示这些帮助信息，添加 cn 可以显示此中文帮助。默认值为英语。",
-        "--encoding [base64|md5] 或者 -e [base64|md5] 或者 /e [base64|md5] :",
-        "  使用指定方式编码（默认）。默认值是 base64 。",
-        "--decoding [base64] 或者 -d [base64] 或者 /d [base64] :",
-        "  使用指定方式解码。默认值是 base64 。",
+        "--encode [disable|base64|md5] 或者 -e [...] 或者 /e [...] :",
+        "  使用指定方式编码（默认）。默认值是 disable 。",
+        "--decode [disable|base64] 或者 -d [...] 或者 /d [...] :",
+        "  使用指定方式解码。默认值是 disable 。",
         "--file <文件名> 或者 -i <文件名> /i <文件名> :",
         "  重命名单一文件。",
         "--folder <文件夹名> 或者 -f <文件夹名> 或者 /f <文件夹名> :",
@@ -60,12 +68,31 @@ class Filenameencoder:
         "  包含隐藏文件。默认值是不包含隐藏文件。",
         "--yes 或者 -y 或者 /y :",
         "  不进行确认询问，直接进行重命名操作。默认值是需要询问。",
+        "--readencode [auto|utf-8|mbcs|gbk|...] | -r [...] | /r [...] :",
+        "  (高级选项)指定读取文件名时使用的字符编码。默认值为自动。",
+        "--writeencode [auto|utf-8|mbcs|gbk|...] | -w [...] | /w [...] :",
+        "  (高级选项)指定写入文件名时使用的字符编码。默认值为自动。",
         " "]
         for i in range(0, len(hlp)):
-            print " ",self.autoencode(hlp[i])
+            codestr = self.strencode("  "+hlp[i],"utf-8",self.systemencoding)
+            if codestr != None:
+                print codestr
     #文件编码
-    def autoencode(self,str):
-        return str.decode('utf-8').encode(self.systemencoding)
+    def strencode(self,istr,rcode,wcode):
+        if istr == "" or istr == None:
+            return istr
+        if rcode == None and wcode == None:
+            return istr
+        estr = istr
+        dstr = istr
+        try:
+            if rcode != None:
+                dstr = istr.decode(rcode)
+            if wcode != None:
+                estr = dstr.encode(wcode)
+        except Exception,e:
+            print "[ERROR]",e
+        return estr
     #程序起点
     def init(self):
         self.about()
@@ -160,6 +187,12 @@ class Filenameencoder:
                 if len(self.path) == 0:
                     self.alert = "[ERROR] Folder is empty."
                     return True
+            elif nk == "--readencode" or nk == "-r" or nk == "/r":
+                if nv != "auto" or nv != "":
+                    self.readencoding = nv
+            elif nk == "--writeencode" or nk == "-w" or nk == "/w":
+                if nv != "auto" or nv != "":
+                    self.writeencoding = nv
             elif nk == "--yes" or nk == "-y" or nk == "/y":
                 self.allyes = True
             else:
@@ -184,11 +217,19 @@ class Filenameencoder:
         ready = 0
         for i in range(0, total):
             path = self.path[i]
-            dir = path[0]
-            filename = path[1]
-            extname = path[2]
-            cfilename = self.filenamecode(filename)
-            if cfilename == "":
+            dir = self.strencode(path[0],self.readencoding,self.writeencoding)
+            if dir == None:
+                return False
+            filename = self.strencode(path[1],self.readencoding,self.writeencoding)
+            if filename == None:
+                return False
+            extname = self.strencode(path[2],self.readencoding,self.writeencoding)
+            if extname == None:
+                return False
+            cfilename = self.strencode(self.filenamecode(filename),self.readencoding,self.writeencoding)
+            if cfilename == None:
+                return False
+            elif cfilename == "":
                 print "[ERROR] File name code failed."
                 return False
             elif cfilename == "MD":
