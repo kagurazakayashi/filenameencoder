@@ -2,7 +2,10 @@
 
 非英文字符文件名.jpg -> Filenameencoder rename -> 6Z2e6Iux5paH5a2X56ym5paH5Lu25ZCN.jpg -> Filenameencoder rename -> 非英文字符文件名.jpg
 
-###Usage:
+- for Python 2.x : filenameencoder.py
+- for macOS GUI (unfinished): filenameencoder/
+
+###Usage (for Python):
 
 filenameencoder.py \[\[--encoding [disable|base64|md5|sha1] | --decoding [disable|base64]] \[--file "filename" | --folder "foldername"] \[--readonly] \[--hiddenfiles] \[--yes] \[--readencode [auto|utf-8|mbcs|gbk|...]] [--writeencode [auto|utf-8|mbcs|gbk|...]]
 
@@ -21,13 +24,15 @@ Enter "filenameencoder.py --help" to get help.
 -  --hiddenfiles | -s | /s :
 -    Include hidden files. Default value is void (not included).
 -  --yes | -y | /y :
--    No confirmation will follow. Default value is void (no).
+-    Don't ask me, all allowed.
+-  --no | -n | /n :
+-    Don't ask me, all refused.
 -  --readencode [auto|utf-8|mbcs|gbk|...] | -r [...] | /r [...] :
 -    (Advanced) Read file name using encoding. Default value is auto.
 -  --writeencode [auto|utf-8|mbcs|gbk|...] | -w [...] | /w [...] :
 -    (Advanced) Write file name using encoding. Default value is auto.
 
-###使用方法:
+###使用方法 (for Python):
 
 filenameencoder.py \[\[--encoding [disable或base64或md5或sha1]或者--decoding [disable或base64]] \[--file "文件名"或者--folder "文件夹名"] \[--readonly] \[--hiddenfiles] \[--yes] \[--readencode [auto或utf-8或mbcs或gbk或...]] [--writeencode [auto或utf-8或mbcs或gbk或...]]
 
@@ -44,13 +49,15 @@ filenameencoder.py \[\[--encoding [disable或base64或md5或sha1]或者--decodin
 -  --hiddenfiles 或者 -s 或者 /s :
 -    包含隐藏文件。默认值是不包含隐藏文件。
 -  --yes 或者 -y 或者 /y :
--    不进行确认询问，直接进行重命名操作。默认值是需要询问。
+-    不进行确认询问，直接进行重命名操作。
+-  --no 或者 -n 或者 /n :
+-    不进行确认询问，仅进行预览。
 -  --readencode [auto或utf-8或mbcs或gbk或...] 或者 -r [...] 或者 /r [...] :
 -    (高级选项)指定读取文件名时使用的字符编码。默认值为自动。
 -  --writeencode [auto或utf-8或mbcs或gbk或...] 或者 -w [...] 或者 /w [...] :
 -    (高级选项)指定写入文件名时使用的字符编码。默认值为自动。
 
-###e.g. / 使用示范 :
+###e.g. / 使用示范 (for Python):
 
 - command$ python filenameencoder.py -e base64 -f test/
 - *. /Users/KagurazakaYashi/filenameencoder/test/.DS_Store
