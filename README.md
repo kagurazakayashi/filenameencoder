@@ -4,13 +4,13 @@
 
 ###Usage:
 
-filenameencoder.py \[\[--encoding [disable|base64|md5] | --decoding [disable|base64]] \[--file "filename" | --folder "foldername"] \[--readonly] \[--hiddenfiles] \[--yes] \[--readencode [auto|utf-8|mbcs|gbk|...]] [--writeencode [auto|utf-8|mbcs|gbk|...]]
+filenameencoder.py \[\[--encoding [disable|base64|md5|sha1] | --decoding [disable|base64]] \[--file "filename" | --folder "foldername"] \[--readonly] \[--hiddenfiles] \[--yes] \[--readencode [auto|utf-8|mbcs|gbk|...]] [--writeencode [auto|utf-8|mbcs|gbk|...]]
 
 Enter "filenameencoder.py --help" to get help.
 
 -  --help [en|cn] | -h [...] | /? [...]:
 -    Display the help. Default value is en.
--  --encode [disable|base64|md5] | -e [...] | /e [...] :
+-  --encode [disable|base64|md5|sha1] | -e [...] | /e [...] :
 -    Set encoding mode (default). Default value is disable.
 -  --decode [disable|base64] | -d [...] | /d [...] :
 -    Set decoding mode. Default value is disable.
@@ -29,11 +29,11 @@ Enter "filenameencoder.py --help" to get help.
 
 ###使用方法:
 
-filenameencoder.py \[\[--encoding [disable或base64或md5]或者--decoding [disable或base64]] \[--file "文件名"或者--folder "文件夹名"] \[--readonly] \[--hiddenfiles] \[--yes] \[--readencode [auto或utf-8或mbcs或gbk或...]] [--writeencode [auto或utf-8或mbcs或gbk或...]]
+filenameencoder.py \[\[--encoding [disable或base64或md5或sha1]或者--decoding [disable或base64]] \[--file "文件名"或者--folder "文件夹名"] \[--readonly] \[--hiddenfiles] \[--yes] \[--readencode [auto或utf-8或mbcs或gbk或...]] [--writeencode [auto或utf-8或mbcs或gbk或...]]
 
 -  --help [en或cn] 或者 -h [...] 或者 /? [...] :
 -    显示这些帮助信息，添加 cn 可以显示此中文帮助。默认值为英语。
--  --encode [disable或base64或md5] 或者 -e [...] 或者 /e [...] :
+-  --encode [disable或base64或md5或sha1] 或者 -e [...] 或者 /e [...] :
 -    使用指定方式编码（默认）。默认值是 disable 。
 -  --decode [disable或base64] 或者 -d [...] 或者 /d [...] :
 -    使用指定方式解码。默认值是 disable 。

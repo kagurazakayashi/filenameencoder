@@ -36,13 +36,13 @@ class Filenameencoder:
         self.writeencoding = None
         self.systemencoding = sys.getfilesystemencoding()
     def minihelp(self):
-        print "\n  usage: "+self.argv[0]+" [[--encoding [disable|base64|md5] | --decoding [disable|base64]] [--file <filename> | --folder <foldername>] [--readonly] [--hiddenfiles] [--yes] [--readencode [auto|utf-8|mbcs|gbk|...]] [--writeencode [auto|utf-8|mbcs|gbk|...]]\n"
+        print "\n  usage: "+self.argv[0]+" [[--encoding [disable|base64|md5|sha1] | --decoding [disable|base64]] [--file <filename> | --folder <foldername>] [--readonly] [--hiddenfiles] [--yes] [--readencode [auto|utf-8|mbcs|gbk|...]] [--writeencode [auto|utf-8|mbcs|gbk|...]]\n"
         print "  Enter \""+self.argv[0]+" --help\" to get help."
         print "  --help [en|cn] | -h [en|cn] | /? [en|cn]:\n"
     #显示英文帮助信息
     def help(self):
         hlp = [
-        "\nusage: "+self.argv[0]+" [[--encoding [disable|base64|md5] | --decoding [disable|base64]] [--file <filename> | --folder <foldername>] [--readonly] [--hiddenfiles] [--yes] [--readencode [auto|utf-8|mbcs|gbk|...]] [--writeencode [auto|utf-8|mbcs|gbk|...]]\n",
+        "\nusage: "+self.argv[0]+" [[--encoding [disable|base64|md5|sha1] | --decoding [disable|base64]] [--file <filename> | --folder <foldername>] [--readonly] [--hiddenfiles] [--yes] [--readencode [auto|utf-8|mbcs|gbk|...]] [--writeencode [auto|utf-8|mbcs|gbk|...]]\n",
         "--help [en|cn] | -h [...] | /? [...]:",
         "  Display the help. Default value is en.",
         "--encode [disable|base64|md5] | -e [...] | /e [...] :",
@@ -66,10 +66,10 @@ class Filenameencoder:
     #显示中文帮助信息
     def helpcn(self):
         hlp = [
-        "\n使用方法: "+self.argv[0]+" [[--encoding [disable或base64或md5]或者--decoding [disable或base64]] [--file <文件名>或者--folder <文件夹名>] [--readonly] [--hiddenfiles] [--yes] [--readencode [auto或utf-8或mbcs或gbk或...]] [--writeencode [auto或utf-8或mbcs或gbk或...]]\n",
+        "\n使用方法: "+self.argv[0]+" [[--encoding [disable或base64或md5或sha1]或者--decoding [disable或base64]] [--file <文件名>或者--folder <文件夹名>] [--readonly] [--hiddenfiles] [--yes] [--readencode [auto或utf-8或mbcs或gbk或...]] [--writeencode [auto或utf-8或mbcs或gbk或...]]\n",
         "--help [en或cn] 或者 -h [...] 或者 /? [...] :",
         "  显示这些帮助信息，添加 cn 可以显示此中文帮助。默认值为英语。",
-        "--encode [disable或base64或md5] 或者 -e [...] 或者 /e [...] :",
+        "--encode [disable或base64或md5或sha1] 或者 -e [...] 或者 /e [...] :",
         "  使用指定方式编码（默认）。默认值是 disable 。",
         "--decode [disable或base64] 或者 -d [...] 或者 /d [...] :",
         "  使用指定方式解码。默认值是 disable 。",
@@ -222,13 +222,13 @@ class Filenameencoder:
             elif nk == "--hiddenfiles" or nk == "-s" or nk == "/s":
                 self.hiddenfile = True
             elif nk == "--encoding" or nk == "-e":
-                if nv == "base64" or nv == "md5":
+                if nv == "base64" or nv == "md5" or nv == "sha1" or nv == "disable":
                     self.codemethod = nv
                 else:
                     return False
             elif nk == "--decoding" or nk == "-d" or nk == "/d":
                 self.codemode = False
-                if nv == "base64":
+                if nv == "base64" or nv == "disable":
                     self.codemethod = nv
                 else:
                     return False
@@ -377,6 +377,22 @@ class Filenameencoder:
                 return newstr
             else:
                 return ""
+        elif self.codemethod == "sha1":
+            if self.codemode == True:
+                newstr = ""
+                try:
+                    md5o = hashlib.sha1()
+                    md5o.update(filename)
+                    newstr = md5o.hexdigest()
+                except Exception,e:
+                    print "[ERROR]",e
+                return newstr
+            else:
+                return ""
+        elif self.codemethod == "disable":
+            return filename
+        else:
+            print "[ERROR] Mode error."
     #判断是否为隐藏文件
     def isHidenFile(self,filePath,filename):
         if 'Windows' in platform.system(): #Windows
@@ -399,9 +415,12 @@ class FilenameencoderTester:
     tmpfile = "FilenameencoderTestFile.tmp"
     b64file = "RmlsZW5hbWVlbmNvZGVyVGVzdEZpbGU=.tmp"
     md5file = "305862a11a46f7bcc2173cbf67f9f8f5.tmp"
+    shafile = "afbe0ed6eab11f2dd4f8a0146af67490d7145707.tmp"
     test = "[TEST]"
+    oki = 0
+    ali = 0
     def init(self):
-        print self.test,"* * * TEST MODE * * *"
+        print self.test,"= = = TEST MODE = = ="
         print self.test,"System encode:",sys.getfilesystemencoding()
         targv = sys.argv
         for i in range(0, len(targv)):
@@ -418,7 +437,15 @@ class FilenameencoderTester:
         nargv = [targv[0],"-e","md5","-i",self.tmpfile,"-y"]
         self.starttest(nargv)
         self.checkfile(self.md5file)
-        self.deletefile(self.md5file)
+        nargv = [targv[0],"-e","sha1","-i",self.md5file,"-y"]
+        self.starttest(nargv)
+        self.checkfile(self.shafile)
+        self.deletefile(self.shafile)
+        print self.test,"OK =",str(self.oki),"/",str(self.ali)
+        if self.oki == self.ali:
+            print self.test,"*ALLOK."
+        else:
+            print self.test,"*FAIL."
     def starttest(self,nargv):
         for i in range(0, len(nargv)):
             print self.test,"new-parameter", i, nargv[i]
@@ -447,6 +474,7 @@ class FilenameencoderTester:
             print self.test,e
             exit()
     def checkfile(self,filename):
+        self.ali = self.ali + 1
         print self.test,"checkfile",filename,"..."
         t = ""
         try:
@@ -460,7 +488,9 @@ class FilenameencoderTester:
             print self.test,"Check failed."
             exit()
         else:
+            self.oki = self.oki + 1
             print self.test,"OK."
+
 #程序执行
 if len(sys.argv) >= 2 and sys.argv[1] == "-test":
     tobj = FilenameencoderTester()
